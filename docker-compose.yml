@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: loan_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: loan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  api:
+    build: ./api
+    container_name: loan_api
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/loan_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+
+  worker:
+    build: ./worker
+    container_name: loan_worker
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/loan_db
+    volumes:
+      - ./worker:/app
+
+volumes:
+  postgres_data:
